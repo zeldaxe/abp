@@ -9,7 +9,8 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/packages/theme-basic"],
       "options": {
-        "project": "packages/theme-basic/ng-package.json"
+        "project": "packages/theme-basic/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

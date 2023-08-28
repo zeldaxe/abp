@@ -9,7 +9,8 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/packages/identity"],
       "options": {
-        "project": "packages/identity/ng-package.json"
+        "project": "packages/identity/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

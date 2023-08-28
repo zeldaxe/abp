@@ -9,7 +9,8 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/packages/tenant-management"],
       "options": {
-        "project": "packages/tenant-management/ng-package.json"
+        "project": "packages/tenant-management/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

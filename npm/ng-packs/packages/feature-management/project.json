@@ -9,7 +9,8 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/packages/feature-management"],
       "options": {
-        "project": "packages/feature-management/ng-package.json"
+        "project": "packages/feature-management/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

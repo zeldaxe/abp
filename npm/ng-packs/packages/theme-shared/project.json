@@ -9,7 +9,8 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/packages/theme-shared"],
       "options": {
-        "project": "packages/theme-shared/ng-package.json"
+        "project": "packages/theme-shared/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {

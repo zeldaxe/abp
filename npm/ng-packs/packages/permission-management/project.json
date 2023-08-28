@@ -9,7 +9,8 @@
       "executor": "@nx/angular:package",
       "outputs": ["{workspaceRoot}/dist/packages/permission-management"],
       "options": {
-        "project": "packages/permission-management/ng-package.json"
+        "project": "packages/permission-management/ng-package.json",
+        "updateBuildableProjectDepsInPackageJson": true
       },
       "configurations": {
         "production": {
