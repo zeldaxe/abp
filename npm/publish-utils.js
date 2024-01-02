@@ -9,9 +9,11 @@ program.option('-cv, --customVersion <customVersion>', 'set exact version');
 
 program.parse(process.argv);
 
-if (program.nextVersion) console.log(getVersion());
+const options = program.opts();
 
-if (program.prerelease)
+if (options.nextVersion) console.log(getVersion());
+
+if (options.prerelease)
   console.log(!!semverParse(getVersion()).prerelease?.length);
 
 function getVersion() {
