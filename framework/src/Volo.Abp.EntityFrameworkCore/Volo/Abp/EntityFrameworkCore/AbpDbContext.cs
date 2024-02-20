@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Volo.Abp.Auditing;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -52,6 +53,8 @@ public abstract class AbpDbContext<TDbContext> : DbContext, IAbpEfCoreDbContext,
     public IDataFilter DataFilter => LazyServiceProvider.LazyGetRequiredService<IDataFilter>();
 
     public IEntityChangeEventHelper EntityChangeEventHelper => LazyServiceProvider.LazyGetService<IEntityChangeEventHelper>(NullEntityChangeEventHelper.Instance);
+
+    public IOptions<AbpEntityChangeOptions> EntityChangeOptions => LazyServiceProvider.LazyGetRequiredService<IOptions<AbpEntityChangeOptions>>();
 
     public IAuditPropertySetter AuditPropertySetter => LazyServiceProvider.LazyGetRequiredService<IAuditPropertySetter>();
 
@@ -306,34 +309,69 @@ public abstract class AbpDbContext<TDbContext> : DbContext, IAbpEfCoreDbContext,
         }
     }
 
-    private void PublishEventsForTrackedEntity(EntityEntry entry)
+    protected virtual void PublishEventsForTrackedEntity(EntityEntry entry)
     {
+        if (HasEntityEntryChanged(entry))
+        {
+            if (entry.Entity is ISoftDelete && entry.Entity.As<ISoftDelete>().IsDeleted)
+            {
+                EntityChangeEventHelper.PublishEntityDeletedEvent(entry.Entity);
+            }
+            else
+            {
+                EntityChangeEventHelper.PublishEntityUpdatedEvent(entry.Entity);
+            }
+            return;
+        }
+
+        foreach (var entityEntry in ChangeTracker.Entries().Where(HasEntityEntryChanged))
+        {
+            if (entityEntry.Entity is ISoftDelete && entityEntry.Entity.As<ISoftDelete>().IsDeleted)
+            {
+                EntityChangeEventHelper.PublishEntityDeletedEvent(entityEntry.Entity);
+            }
+            else
+            {
+                EntityChangeEventHelper.PublishEntityUpdatedEvent(entityEntry.Entity);
+            }
+        }
+
         switch (entry.State)
         {
             case EntityState.Added:
                 ApplyAbpConceptsForAddedEntity(entry);
                 EntityChangeEventHelper.PublishEntityCreatedEvent(entry.Entity);
                 break;
-            case EntityState.Modified:
-                ApplyAbpConceptsForModifiedEntity(entry);
-                if (entry.Properties.Any(x => x.IsModified && x.Metadata.ValueGenerated == ValueGenerated.Never))
-                {
-                    if (entry.Entity is ISoftDelete && entry.Entity.As<ISoftDelete>().IsDeleted)
-                    {
-                        EntityChangeEventHelper.PublishEntityDeletedEvent(entry.Entity);
-                    }
-                    else
-                    {
-                        EntityChangeEventHelper.PublishEntityUpdatedEvent(entry.Entity);
-                    }
-                }
-
-                break;
             case EntityState.Deleted:
                 ApplyAbpConceptsForDeletedEntity(entry);
                 EntityChangeEventHelper.PublishEntityDeletedEvent(entry.Entity);
                 break;
         }
+    }
+
+    protected virtual bool HasEntityEntryChanged(EntityEntry entry)
+    {
+        if (entry.State != EntityState.Modified && entry.State != EntityState.Unchanged)
+        {
+            return false;
+        }
+
+        var changed = entry.State == EntityState.Modified && entry.Properties.Any(x => x.IsModified && x.Metadata.ValueGenerated == ValueGenerated.Never);
+        if (changed)
+        {
+            return true;
+        }
+
+        if (!changed &&
+            EntityChangeOptions.Value.PublishEntityUpdatedEventWhenNavigationChanges)
+        {
+            if (entry.Navigations.Any(navigation => navigation.IsModified || (navigation is ReferenceEntry && navigation.As<ReferenceEntry>().TargetEntry?.State == EntityState.Modified)))
+            {
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 
     protected virtual void HandlePropertiesBeforeSave()
