@@ -1,9 +1,38 @@
 @using Volo.Abp.Ui.Branding
+@using System.Threading.Tasks
+@using Volo.Abp.AspNetCore.Components
+
 @inject IBrandingProvider BrandingProvider
+@inject NavigationManager NavigationManager
+@inherits AbpComponentBase
+
 <a class="navbar-brand" href="">
     @if (!BrandingProvider.LogoUrl.IsNullOrWhiteSpace())
     {
         <img src="@BrandingProvider.LogoUrl.TrimStart('/', '~')" alt="@BrandingProvider.AppName">
     }
-    @BrandingProvider.AppName
+    @BrandingProvider.AppName - (@count) - @currentUrl
 </a>
+
+@code {
+    private string? currentUrl;
+    private int count = Random.Shared.Next(1, 100);
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        //NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    @* private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        count++;
+        StateHasChanged();
+    } *@
+
+    public void Dispose()
+    {
+        //NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
